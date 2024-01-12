@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Tranlation via AI</title>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+</head>
+<body>
+    <h1>Tranlation via AI</h1>
+    <HR>
+	<h2>Submit a file to start translation</h2>
+    <form id="data-form">
+        <label for="file_format">File Format:</label>
+        <select id="file_format" name="file_format">
+            <option value="pdf">PDF</option>
+            <option value="md">Markdown</option>
+        </select>
+        <br>
+        
+        <label for="language">Language:</label>
+        <input type="text" id="to_lan" name="to_lan">
+        <br>
+        
+        <label for="file">Upload File:</label>
+        <input type="file" id="file" name="file">
+        <br>
+        
+        <button type="button" id="submit-btn">Submit</button>
+    </form>
+	<h3>Submit Result:</h3>
+    <div id="submit_response"></div>
+    <br>
+    <HR>
+	<h2>Query a job status</h2>
+    <label for="job_id">Job ID:</label>
+    <input type="text" id="job_id" name="job_id">
+    <button type="button" id="query-btn">Query</button>
+    <h3>Query Result:</h3>
+	<div id="query_response"></div>
+	<HR>
+	<a id="download_link"></a>
+    <script>
+	    var host = '{{host}}';
+		var port = '{{port}}';
+        $(document).ready(function() {
+            // Submit form data using AJAX POST request
+            $("#submit-btn").click(async function ()  {
+                var formData = new FormData($("#data-form")[0]);
+				try {
+					const response = await fetch("http://" + host +":" + port + "/jobs", {
+						method: "POST",
+						body: formData
+					});
+					const responseData = await response.json();
+					$("#submit_response").text(JSON.stringify(responseData));
+					console.log(responseData)
+				} catch (error) {
+					console.error("Error:", error);
+					$("#submit_response").text("Fail to submit job:" + error);
+				}				
+            });
+            
+            // Query using AJAX GET request[
+            $("#query-btn").click(async function ()  {
+                var jobID = $("#job_id").val();
+				try {
+					const response = await fetch("http://" + host +":" + port + "/jobs/" + jobID);
+					const responseData = await response.json();
+					$("#query_response").text(JSON.stringify(responseData));
+					if(responseData.status == "Finished") {
+					   const download_link = document.getElementById('download_link');
+					   download_link.href = "http://" + host +":" + port + "/translations/" + jobID;
+					   download_link.textContent = "Download";
+					   download_link.target = "_blank";
+					} else {
+					   const download_link = document.getElementById('download_link');
+					   download_link.href = "";
+					   download_link.textContent = "";
+					}
+					console.log(responseData)
+					// Handle the response data as needed
+				} catch (error) {
+					console.error("Error:", error);
+					$("#query_response").text("Job '" + jobID + "' not found");
+					const download_link = document.getElementById('download_link');
+					download_link.href = "";
+					download_link.textContent = "";
+				}				
+            });
+        });
+    </script>
+</body>
+</html>
